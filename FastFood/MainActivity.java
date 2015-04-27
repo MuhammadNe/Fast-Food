@@ -111,8 +111,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 			initMap();
 
 			Toast.makeText(this, "Map Ready!", Toast.LENGTH_LONG).show();
-			//gotoLocation(beitHanina_LAT, beitHanina_LNG);
-			//gotoLocation(beitHanina_LAT, beitHanina_LNG, defaultZoom);
+			
 
 			//mMap.setMyLocationEnabled(true); // Program Changed To Fused
 			//Toast.makeText(this, lat + "," + lng, Toast.LENGTH_LONG).show();
