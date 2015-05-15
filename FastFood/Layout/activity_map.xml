@@ -64,3 +64,20 @@
         android:layout_height="fill_parent" />
 
 </LinearLayout>
+
+<!-- 
+enable and disable map functions and gensture for the user
+
+ map:cameraTargetLat="31.826439"
+    map:cameraTargetLng="35.222458"
+    map:cameraZoom="15"
+    CAN ALSO BE DONE IN JAVA CODING
+
+
+map:uiRotateGestures="false"
+map:uiTiltGestures="false"
+map:uiScrollGestures="false"
+map:uiZoomGestures="false"
+map:uiZoomControl="false"
+
+ -->
