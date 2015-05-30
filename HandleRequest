@@ -9,7 +9,8 @@ class MainHandler(webapp2.RequestHandler):
 		longg=self.request.get('lng')
 		lat=self.request.get('lat')
 		if not Name:
-            self.error(403)
+
+self.error(403)
             self.response.write('Empty Name submitted')
             return
 		if not Address:
