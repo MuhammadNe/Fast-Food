@@ -1,0 +1,36 @@
+import webapp2
+from Restaurants import Restaurants
+import json
+
+class MainHandler(webapp2.RequestHandler):
+    def get(self):
+		Name = self.request.get('Name')
+		Address = self.request.get('Address')
+		longg=self.request.get('lng')
+		lat=self.request.get('lat')
+		if not Name:
+            self.error(403)
+            self.response.write('Empty Name submitted')
+            return
+		if not Address:
+            self.error(403)
+            self.response.write('Empty Address submitted')
+            return
+		
+		name = Restaurants.query(Restaurants.Name == Name).get()
+        if name:
+            self.error(402)
+            self.response.write('restaurants exist')
+            return
+			
+		resta = Restaurants()
+        resta.Name = Name
+        resta.Address=Address
+		resta.Longititude=longg
+		resta.Latitude=lat
+        resta.put()
+        self.response.write(json.dumps({'status':'OK'}))
+	
+app = webapp2.WSGIApplication([
+    ('/', MainHandler)
+], debug=True)
