@@ -1,0 +1,76 @@
+from google.appengine.ext import ndb
+import hashlib      #we need this to safely store passwords
+import logging
+
+class User(ndb.Model):
+    #id = ndb.IntegerProperty()
+    name = ndb.StringProperty()
+    email = ndb.StringProperty()
+    password = ndb.StringProperty()
+
+    @staticmethod
+    def checkToken(token):
+        user = User.get_by_id(long(token))
+        return user
+
+    def setPassword(self, password):
+        self.password = hashlib.md5(password).hexdigest()
+        self.put()
+
+    def checkPassword(self, password):
+        if not password:
+            return False
+        logging.info("self.pass: {}, hashed pass: {}".format(self.password, hashlib.md5(password).hexdigest()))
+        if self.password == hashlib.md5(password).hexdigest():
+            return True
+
+        return False
+    
+class LoginUser(webapp2.RequestHandler):
+    def get(self):
+        name = self.request.get('name')
+        email = self.request.get('email')
+        password = self.request.get('password')
+        user = User.query(User.name == name).get()
+        if not user or not user.checkPassword(password):
+            self.error(403)
+            self.response.write('Wrong username or password')
+            return
+
+        self.response.set_cookie('our_token', str(user.key.id()))
+        self.response.write(json.dumps({'status':'OK'}))
+
+class RegisterUser(webapp2.RequestHandler):
+    def get(self):
+        name = self.request.get('name')
+        email = self.request.get('email')
+        password = self.request.get('password')
+        if not password:
+            self.error(403)
+            self.response.write('Empty password submitted')
+            return
+
+        user = User.query(User.email == email).get()
+        if user:
+            self.error(402)
+            self.response.write('Email taken')
+            return
+
+        user = User()
+        user.name = name
+        user.email = email
+        user.setPassword(password)
+        user.put()
+        self.response.set_cookie('our_token', str(user.key.id()))
+        self.response.write(json.dumps({'status':'OK'}))
+
+class PersonalUser(webapp2.RequestHandler):
+    def get(self):
+        user = None
+        if self.request.cookies.get('our_token'):    #the cookie that should contain the access token!
+            user = User.checkToken(self.request.cookies.get('our_token'))
+
+        if not user:
+            self.redirect('/')
+
+        self.response.write(json.dumps({'status':'OK'}))
