@@ -1,37 +1,50 @@
+#!/usr/bin/env python
+#
+# Copyright 2007 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import webapp2
-from Restaurants import Restaurants
+#from Restaurants import Restaurants
 import json
+from array import array
+from google.appengine.ext import ndb
 
+class Restaurants(ndb.Model):
+    Name = ndb.StringProperty()
+    Address = ndb.StringProperty()
+    lng = ndb.FloatProperty()
+    lat = ndb.FloatProperty()
+    comment = ndb.StringProperty()
+    
+    
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-		Name = self.request.get('Name')
-		Address = self.request.get('Address')
-		longg=self.request.get('lng')
-		lat=self.request.get('lat')
-		if not Name:
-
-self.error(403)
-            self.response.write('Empty Name submitted')
-            return
-		if not Address:
-            self.error(403)
-            self.response.write('Empty Address submitted')
-            return
-		
-		name = Restaurants.query(Restaurants.Name == Name).get()
-        if name:
-            self.error(402)
-            self.response.write('restaurants exist')
-            return
-			
-		resta = Restaurants()
-        resta.Name = Name
-        resta.Address=Address
-		resta.Longititude=longg
-		resta.Latitude=lat
-        resta.put()
-        self.response.write(json.dumps({'status':'OK'}))
-	
+        pos_list=[]
+        pos=Restaurants()
+        name=self.request.get('name')
+        address=self.request.get('address')
+        lng=self.request.get('lng')
+        lat=self.request.get('lat')
+        coment=self.request.get('comment')
+        pos_list.append(name)
+        pos_list.append(address)
+        pos_list.append(lng)
+        pos_list.append(lat)
+        pos_list.append(coment)
+        self.response.write(" ".join(pos_list))
+        pos.put()
+        
 app = webapp2.WSGIApplication([
     ('/', MainHandler)
 ], debug=True)
