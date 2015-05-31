@@ -1,15 +1,37 @@
 package com.MOS.fastfood;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.text.Html;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -23,6 +45,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+//import com.MOS.fastfood.MainActivity.Loader;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -46,11 +70,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.plus.Plus;
-
-
-
-
-
 import android.test.PerformanceTestCase;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -74,7 +93,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
  */
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -88,15 +106,21 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	private static final int GPS_ERRORDIALOG_REQUEST = 9001;
 
 
-
 	//Declaring Google Map
 	private GoogleMap mMap;
 	private GoogleApiClient mGoogleApiClient;
 	private LocationRequest mLocationRequest;
 
-	 public static final String TAG = MapActivity.class.getSimpleName();
-	 
-	 
+	//Getting lng AND lat
+	RestaurantData restaurantData = new RestaurantData();
+	String tempResult;
+	String lng = "", lat = "";
+
+	//RestaurantData data = new RestaurantData();
+
+	public static final String TAG = MapActivity.class.getSimpleName();
+
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -146,10 +170,11 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 				@Override
 				public void onClick(View v) {
-					ShowLocation();
+					/*ShowLocation();
 					Intent intent = new Intent(getApplicationContext(), FacebookLoginActivity.class);
 					startActivity(intent);
-					finish();
+					finish();*/
+					new RequestTask().execute("http://jce-fastfood-project.appspot.com/?lng=?lng?"+lng+ "?/lng?&lat=?lat?"+lat+ "?/lat?&name=?name?hello?/name?");
 				}
 			});
 
@@ -180,23 +205,23 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	}
 
 
-	 @Override
-	    protected void onResume() {
-	        super.onResume();
-	        initMap();
-	        mGoogleApiClient.connect();
-	    }
+	@Override
+	protected void onResume() {
+		super.onResume();
+		initMap();
+		mGoogleApiClient.connect();
+	}
 
-	  @Override
-	    protected void onPause() {
-	        super.onPause();
+	@Override
+	protected void onPause() {
+		super.onPause();
 
-	        if (mGoogleApiClient.isConnected()) {
-	            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-	            mGoogleApiClient.disconnect();
-	            
-	        }
-	    }
+		if (mGoogleApiClient.isConnected()) {
+			LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+			mGoogleApiClient.disconnect();
+
+		}
+	}
 
 
 	@Override
@@ -280,22 +305,22 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll,15);
 		mMap.animateCamera(update);
 	}
-	
-	 private void handleNewLocation(Location location) {
-	        Log.d(TAG, location.toString());
 
-	        double currentLatitude = location.getLatitude();
-	        double currentLongitude = location.getLongitude();
+	private void handleNewLocation(Location location) {
+		Log.d(TAG, location.toString());
 
-	        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+		double currentLatitude = location.getLatitude();
+		double currentLongitude = location.getLongitude();
 
-	        //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
-	        MarkerOptions options = new MarkerOptions()
-	                .position(latLng)
-	                .title("I am here!");
-	        mMap.addMarker(options);
-	        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-	    }
+		LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+
+		//mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
+		MarkerOptions options = new MarkerOptions()
+		.position(latLng)
+		.title("I am here!");
+		mMap.addMarker(options);
+		mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+	}
 
 	/*
 	 * Searches for a location when press on Go button 
@@ -363,7 +388,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	        else {
 	            handleNewLocation(location);
 	        }*/
-		
+
 		mLocationRequest = LocationRequest.create();
 		mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 		mLocationRequest.setInterval(5000);
@@ -388,8 +413,14 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	@Override
 	public void onLocationChanged(Location location) {
 		gotoLocation(location);
-		Toast.makeText(this, location.getLatitude()+","+location.getLongitude(), Toast.LENGTH_SHORT).show();
-		 //handleNewLocation(location);
+		lng = location.getLongitude() + "";
+		lat = location.getLatitude() + "";
+		
+		
+		
+		//Toast.makeText(this, location.getLatitude()+","+location.getLongitude(), Toast.LENGTH_SHORT).show();
+		//handleNewLocation(location);
+
 	}
 
 
@@ -403,6 +434,51 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		catch(Exception e)
 		{
 			Toast.makeText(this, "Null Location", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+
+
+
+
+	/***********************************Sending HTTP GET REQUES****************************************************/
+
+
+	class RequestTask extends AsyncTask<String, String, String>{
+
+		@Override
+		protected String doInBackground(String... uri) {
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpResponse response;
+			String responseString = null;
+			try {
+				response = httpclient.execute(new HttpGet(uri[0]));
+				StatusLine statusLine = response.getStatusLine();
+				if(statusLine.getStatusCode() == HttpStatus.SC_OK){
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					response.getEntity().writeTo(out);
+					responseString = out.toString();
+					out.close();
+				} else{
+					//Closes the connection.
+					response.getEntity().getContent().close();
+					throw new IOException(statusLine.getReasonPhrase());
+				}
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return responseString;
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			super.onPostExecute(result);
+			tempResult = result;
+			Toast.makeText(getApplicationContext(), result, Toast.LENGTH_SHORT).show();
+			//restaurantData.parse(result);
+
 		}
 	}
 }
