@@ -15,36 +15,54 @@
 # limitations under the License.
 #
 import webapp2
+import logging
 #from Restaurants import Restaurants
 import json
 from array import array
 from google.appengine.ext import ndb
 
 class Restaurants(ndb.Model):
-    Name = ndb.StringProperty()
-    Address = ndb.StringProperty()
-    lng = ndb.FloatProperty()
-    lat = ndb.FloatProperty()
-    comment = ndb.StringProperty()
+    name = ndb.StringProperty()
+    #Address = ndb.StringProperty()
+    lng = ndb.StringProperty()
+    lat = ndb.StringProperty()
+    #comment = ndb.StringProperty()
     
     
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        pos_list=[]
+        
         pos=Restaurants()
-        name=self.request.get('name')
-        address=self.request.get('address')
-        lng=self.request.get('lng')
-        lat=self.request.get('lat')
-        coment=self.request.get('comment')
-        pos_list.append(name)
-        pos_list.append(address)
-        pos_list.append(lng)
-        pos_list.append(lat)
-        pos_list.append(coment)
-        self.response.write(" ".join(pos_list))
+        job=self.request.get('fetch')
+        counter=1
+        s="save"
+        r="ret"
+
+
+        #if job == s
+        pos.name=self.request.get('name')
+        #address=self.request.get('address')
+        pos.lng=self.request.get('lng')
+        pos.lat=self.request.get('lat')
+        #coment=self.request.get('comment')
+
         pos.put()
         
+        #if job == r
+        n=Restaurants.query().count(limit=None)
+        
+		#rest_list=Restaurants.query().fetch(1)
+		#self.response.write(rest_list)
+        for i in range(0,n):
+        	rest_list=Restaurants.query().fetch(1,offset=i)
+        	self.response.write(str(rest_list) + '\n')
+        	i=i+1
+        
+        
+        
+        
+		
 app = webapp2.WSGIApplication([
     ('/', MainHandler)
 ], debug=True)
+
