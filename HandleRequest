@@ -1,68 +1,79 @@
-#!/usr/bin/env python
-#
-# Copyright 2007 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+from google.appengine.ext.webapp import template
 import webapp2
-import logging
-#from Restaurants import Restaurants
 import json
-from array import array
-from google.appengine.ext import ndb
+from Restaurants import Restaurants
 
-class Restaurants(ndb.Model):
-    name = ndb.StringProperty()
-    #Address = ndb.StringProperty()
-    lng = ndb.StringProperty()
-    lat = ndb.StringProperty()
-    #comment = ndb.StringProperty()
-    
-    
-class MainHandler(webapp2.RequestHandler):
+class NewRestaurants(webapp2.RequestHandler):
     def get(self):
-        
-        pos=Restaurants()
-        job=self.request.get('fetch')
-        counter=1
-        s="save"
-        r="ret"
+        name = self.request.get('Name')
+        address = self.request.get('Address')
+        lng=self.request.get('lng')
+        lat=self.request.get('lat')
+        if not Name:
+            self.error(403)
+            self.response.write('Empty Name submitted')
+            return
 
+        if not Address:
+            self.error(403)
+            self.response.write('Empty Address submitted')
+            return
+                
+        name = User.query(Restaurants.Name == Name).get()
+        if name:
+            self.error(402)
+            self.response.write('restaurants exist')
+            return
+                        
+        resta = Restaurants()
+        resta.name = name
+        resta.address=address
+        resta.lng=lng
+        resta.lat=lat
+        resta.put()
+        self.response.write(json.dumps({'status':'OK'}))
+        
 
-        #if job == s
-        pos.name=self.request.get('name')
-        #address=self.request.get('address')
-        pos.lng=self.request.get('lng')
-        pos.lat=self.request.get('lat')
-        #coment=self.request.get('comment')
+class ResauratntsList_WithRespectTo(webapp2.RequestHandler):
+    def get(self):
+        longitude=self.request.get('lng') #current location
+        latitude=self.request.get('lat') #current location
+        distance=self.request.get('distance')# radius search
+        user = Restaurants.query(distance_on_unit_sphere(longitude,latitude,User.longitude,User.latitude)<=distance).get()
 
-        pos.put()
-        
-        #if job == r
-        n=Restaurants.query().count(limit=None)
-        
-		#rest_list=Restaurants.query().fetch(1)
-		#self.response.write(rest_list)
-        for i in range(0,n):
-        	rest_list=Restaurants.query().fetch(1,offset=i)
-        	self.response.write(str(rest_list) + '\n')
-        	i=i+1
-        
-        
-        
-        
-		
-app = webapp2.WSGIApplication([
-    ('/', MainHandler)
-], debug=True)
-
+        if not user :
+            self.error(403)
+            self.response.write('No availible Restaurants')
+            return
+                
+        self.response.write(json.dumps({'status':'OK'}))
+                #relevant to Search function
+    def distance_on_unit_sphere(lat1, long1, lat2, long2):
+ 
+        # Convert latitude and longitude to 
+        # spherical coordinates in radians.
+        degrees_to_radians = math.pi/180.0
+         
+        # phi = 90 - latitude
+        phi1 = (90.0 - lat1)*degrees_to_radians
+        phi2 = (90.0 - lat2)*degrees_to_radians
+         
+        # theta = longitude
+        theta1 = long1*degrees_to_radians
+        theta2 = long2*degrees_to_radians
+         
+        # Compute spherical distance from spherical coordinates.
+         
+        # For two locations in spherical coordinates 
+        # (1, theta, phi) and (1, theta, phi)
+        # cosine( arc length ) = 
+        #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
+        # distance = rho * arc length
+     
+        cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + math.cos(phi1)*math.cos(phi2))
+           
+        arc = math.acos( cos )
+ 
+        # Remember to multiply arc by the radius of the earth 
+        # in your favorite set of units to get length.
+        return arc            
