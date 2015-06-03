@@ -1,0 +1,25 @@
+from google.appengine.ext import ndb
+import logging
+
+class Rest_Comments(ndb.Model):
+    rest_name = ndb.StringProperty()
+    comment = ndb.StringProperty()
+
+class NewComment(webapp2.RequestHandler):
+    def get(self):
+        rest_name = self.request.get('name')
+		comment = self.request.get('comment')
+		if not rest_name:
+            self.error(403)
+            self.response.write('Empty restaurant submitted')
+            return
+
+        if not comment:
+        	self.error(403)
+        	self.response.write('empty comment cant accept')
+        user = User()
+        user.name = name
+        user.email = email
+        user.setPassword(password)
+        user.put()
+        self.response.write(json.dumps({'status':'OK'}))
