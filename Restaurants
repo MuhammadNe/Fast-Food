@@ -1,0 +1,14 @@
+from google.appengine.ext import ndb
+import logging
+
+class Restaurants(ndb.Model):
+    name = ndb.StringProperty()
+    address = ndb.StringProperty()
+    lng=ndb.StringProperty()
+    lat= ndb.StringProperty()
+    rating= ndb.StringProperty()
+
+    @staticmethod
+    def checkToken(token):
+        Resta = User.get_by_id(long(token))
+        return Resta	
