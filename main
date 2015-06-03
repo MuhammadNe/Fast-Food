@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+#
+# Copyright 2007 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import webapp2
+import logging
+from Restaurants import *
+from userClass import *
+import json
+from HandleRequest import *
+
+  
+    
+class MainHandler(webapp2.RequestHandler):
+    def get(self):
+        gotouserfunctions = 'userfunctions'
+        gotoRestfunctions = 'restfunctions'
+        togo = self.request.get('togo')
+        if not togo:
+            self.error(402)
+            self.response.write('no instruction - togo is null')
+            return
+
+        if togo == gotouserfunctions:
+            self.response.write('User functions')
+
+
+
+
+        if togo == gotoRestfunctions:
+            self.response.write('Restaurants functions')
+
+            res=Restaurants.query().fetch(1)
+            
+            st = str(res[0].name) + ',' + str(res[0].address) + ',' + str(res[0].lng) + ',' + str(res[0].lat) + ',' + str(res[0].rating) + '#'
+            self.response.write(st +'\n')
+            n=Restaurants.query().count(limit=None)
+            for i in range(1,n):
+                rest_list=Restaurants.query().fetch(1,offset=i-1)
+                rest_list=list(rest_list)
+                st = str(rest_list[0].name) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(rest_list[0].rating) + '#'
+                self.response.write(str(rest_list[0].name))
+                
+            
+		
+app = webapp2.WSGIApplication([
+    ('/', MainHandler)
+], debug=True)
+
