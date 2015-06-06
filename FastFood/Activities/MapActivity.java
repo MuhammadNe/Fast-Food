@@ -170,11 +170,20 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 				@Override
 				public void onClick(View v) {
-					/*ShowLocation();
-					Intent intent = new Intent(getApplicationContext(), FacebookLoginActivity.class);
-					startActivity(intent);
-					finish();*/
-					new RequestTask().execute("http://jce-fastfood-project.appspot.com/?lng=?lng?"+lng+ "?/lng?&lat=?lat?"+lat+ "?/lat?&name=?name?hello?/name?");
+					
+					if((lat.equals(null) || lng.equals(null)) || (lat.equals("") || lng.equals("")))
+					{
+						Toast.makeText(getApplicationContext(), "Can't Get Coordinates",Toast.LENGTH_SHORT).show();
+					}
+					else
+					{
+						restaurantData.saveLat = lat;
+						restaurantData.savelng = lng;
+						/*ShowLocation();*/
+						Intent intent = new Intent(getApplicationContext(), AddRestaurantActivity.class);
+						startActivity(intent);
+						finish();
+					}
 				}
 			});
 
@@ -481,4 +490,17 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
