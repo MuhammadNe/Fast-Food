@@ -55,9 +55,9 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				
-				new RequestTask().execute("http://jce-fastfood-project.appspot.com/?fetch=ret");
+				new RequestTask().execute("http://jce-fastfood-project.appspot.com/?togo=restfunctions");
 				
-				tv.append(RestaurantData.Data.size()+"");
+				//tv.append(RestaurantData.Data.size()+"");
 				
 				/*for(int i =0; i < RestaurantData.Data.size(); i++)
 				{
@@ -127,7 +127,8 @@ public class MainActivity extends Activity {
 			tempResult = result;
 			//Toast.makeText(getApplicationContext(), result, Toast.LENGTH_SHORT).show();
 			//restaurantData.parse(result);
-			RestaurantData.Data.add(result);
+			//RestaurantData.Data.add(result);
+			Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
 		}
 	}
 	
