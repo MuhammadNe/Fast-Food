@@ -27,11 +27,13 @@ class MainHandler(webapp2.RequestHandler):
     def get(self):
         gotouserfunctions = 'userfunctions'
         gotoRestfunctions = 'restfunctions'
+        new_rest1 = 'new_rest'
         togo = self.request.get('togo')
+
         if not togo:
             self.error(402)
-            self.response.write('no instruction - togo is null')
-            return
+            self.response.write('togo is null\n')
+            
 
         if togo == gotouserfunctions:
             self.response.write('User functions')
@@ -40,19 +42,54 @@ class MainHandler(webapp2.RequestHandler):
 
 
         if togo == gotoRestfunctions:
-            self.response.write('Restaurants functions')
+           # self.response.write('Restaurants functions')
 
             res=Restaurants.query().fetch(1)
             
             st = str(res[0].name) + ',' + str(res[0].address) + ',' + str(res[0].lng) + ',' + str(res[0].lat) + ',' + str(res[0].rating) + '#'
-            self.response.write(st +'\n')
+            self.response.write(st)
             n=Restaurants.query().count(limit=None)
             for i in range(1,n):
                 rest_list=Restaurants.query().fetch(1,offset=i-1)
                 rest_list=list(rest_list)
+                st = ''
                 st = str(rest_list[0].name) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(rest_list[0].rating) + '#'
-                self.response.write(str(rest_list[0].name))
+                self.response.write(st)
+            
+        
+        newrest=self.request.get('newrest')#new restaurant to be added
+        if newrest == new_rest1:
+            name = self.request.get('name')
+            address = self.request.get('address')
+            lng = self.request.get('lng')
+            lat = self.request.get('lat')
+            if not name:
+                self.error(403)
+                self.response.write('Empty Name submitted')
+                return
+
+            if not address:
+                self.error(403)
+                self.response.write('Empty Address submitted')
+                return
                 
+            name2 = User.query(Restaurants.name == name).get()
+            if name2:
+                self.error(402)
+                self.response.write('restaurants exist')
+                return
+                        
+            resta = Restaurants()
+            resta.name = name
+            resta.address=address
+            resta.lng=lng
+            resta.lat=lat
+            resta.put()
+            self.response.write(json.dumps({'status':'OK'}))
+            self.response.write('new restaurant added')
+
+
+
             
 		
 app = webapp2.WSGIApplication([
