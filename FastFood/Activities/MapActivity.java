@@ -30,6 +30,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.print.PrintAttributes;
 import android.support.v4.app.FragmentActivity;
 import android.text.Html;
 import android.util.Log;
@@ -44,6 +45,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 
 //import com.MOS.fastfood.MainActivity.Loader;
@@ -157,11 +159,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 			.addOnConnectionFailedListener(this)
 			.addApi(LocationServices.API)
 			.build();
+			markLocation();
 
-			/*mLocationRequest = LocationRequest.create()
-					.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-					.setInterval(5000)
-					.setFastestInterval(1000);	*/
+
 
 			EditText et = (EditText) findViewById(R.id.editText1);
 			Button locationButton = (Button) findViewById(R.id.LocationButton);
@@ -170,15 +170,15 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 				@Override
 				public void onClick(View v) {
-					
+
 					if((lat.equals(null) || lng.equals(null)) || (lat.equals("") || lng.equals("")))
 					{
 						Toast.makeText(getApplicationContext(), "Can't Get Coordinates",Toast.LENGTH_SHORT).show();
 					}
 					else
 					{
-						restaurantData.saveLat = lat;
-						restaurantData.savelng = lng;
+						RestaurantData.saveLat = lat;
+						RestaurantData.savelng = lng;
 						/*ShowLocation();*/
 						Intent intent = new Intent(getApplicationContext(), AddRestaurantActivity.class);
 						startActivity(intent);
@@ -205,12 +205,13 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 			});
 
 
-
 		}
 		else
 		{
 			Toast.makeText(this, "Can't Load Map.", Toast.LENGTH_LONG).show();
 		}
+		
+
 	}
 
 
@@ -331,6 +332,26 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
 	}
 
+	public void markLocation()
+	{
+		RestaurantData restaurantData = new RestaurantData();
+		for(int i = 0; i<RestaurantData.lng.size(); i++)
+		{
+			
+			try
+			{
+				double templat = Double.parseDouble(RestaurantData.lat.get(i));
+				double templng = Double.parseDouble(RestaurantData.lng.get(i));
+				LatLng ll = new LatLng(templat, templng);
+				mMap.addMarker(new MarkerOptions().position(ll).title("Marker"));
+			}
+			catch (Exception e)
+			{
+				System.out.println("cant mark");
+			}
+		}
+	}
+
 	/*
 	 * Searches for a location when press on Go button 
 	 */
@@ -424,9 +445,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		gotoLocation(location);
 		lng = location.getLongitude() + "";
 		lat = location.getLatitude() + "";
-		
-		
-		
+
+
+
 		//Toast.makeText(this, location.getLatitude()+","+location.getLongitude(), Toast.LENGTH_SHORT).show();
 		//handleNewLocation(location);
 
