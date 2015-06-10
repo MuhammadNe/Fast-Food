@@ -17,7 +17,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import com.MOS.fastfood.MainActivity.RequestTask;
+
 
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -25,9 +25,11 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.RatingBar;
 import android.widget.Toast;
 
 public class AddRestaurantActivity extends ActionBarActivity {
+
 
 	//EditText nameED = (EditText) findViewById(R.id.editText1);
 	
@@ -49,13 +51,17 @@ public class AddRestaurantActivity extends ActionBarActivity {
 	//submitting the review
 	public void gotoSubmit(View v)
 	{
+		HttpGetConnection getRequest = new HttpGetConnection();
+		float tempRate;
 		EditText nameED = (EditText) findViewById(R.id.editText1);
-		String tempName;
-		tempName = nameED.getText().toString();
+		RatingBar ratingBar = (RatingBar) findViewById(R.id.ratingBar1);
 		if(nameED.getText().toString().trim().length() > 0)
 		{
 			RestaurantData.saveName += nameED.getText();
-			new RequestTask().execute("http://jce-fastfood-project.appspot.com/?newrest=new_rest&name=" + RestaurantData.saveName + "&address=inhell&lng=" + RestaurantData.savelng + "&lat=" + RestaurantData.saveLat);
+			tempRate = ratingBar.getRating();
+			RestaurantData.saveRate = Float.toString(tempRate);
+			getRequest.execute("http://jce-fastfood-project.appspot.com/?newrest=new_rest&name=" + RestaurantData.saveName + "&address=inhell&lng=" + RestaurantData.savelng + "&lat=" + RestaurantData.saveLat);
+			//getRequest.execute("http://jce-fastfood-project.appspot.com/?togo=rateit&name=" + RestaurantData.saveName + "&rat=" + RestaurantData.saveRate);
 			RestaurantData.saveName = "";
 			Intent intent = new Intent(getApplicationContext(), ListActivity.class);
 			startActivity(intent);
@@ -68,40 +74,7 @@ public class AddRestaurantActivity extends ActionBarActivity {
 		
 	}
 	
-	class RequestTask extends AsyncTask<String, String, String>{
-
-		@Override
-		protected String doInBackground(String... uri) {
-			HttpClient httpclient = new DefaultHttpClient();
-			HttpResponse response;
-			String responseString = null;
-			try {
-				response = httpclient.execute(new HttpGet(uri[0]));
-				StatusLine statusLine = response.getStatusLine();
-				if(statusLine.getStatusCode() == HttpStatus.SC_OK){
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					response.getEntity().writeTo(out);
-					responseString = out.toString();
-					out.close();
-				} else{
-					//Closes the connection.
-					response.getEntity().getContent().close();
-					throw new IOException(statusLine.getReasonPhrase());
-				}
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return responseString;
-		}
-
-		@Override
-		protected void onPostExecute(String result) {
-			super.onPostExecute(result);
-			Toast.makeText(getApplicationContext(), result, Toast.LENGTH_SHORT).show();
-		}
-	}
+	
 	
 	
 }
