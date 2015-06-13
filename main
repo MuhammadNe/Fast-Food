@@ -20,44 +20,92 @@ from Restaurants import *
 from userClass import *
 import json
 from HandleRequest import *
+from RestaurantsComments import *
+from restaurantsRating import *
 
-  
-    
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         gotouserfunctions = 'userfunctions'
         gotoRestfunctions = 'restfunctions'
+        rateit = 'rateit'
+        allrating = 'allratings'
+        commentit = 'commentit'
+        givemecomments = 'givemecomments'
+
         new_rest1 = 'new_rest'
         togo = self.request.get('togo')
 
         if not togo:
             self.error(402)
             self.response.write('togo is null\n')
+            return
             
-
+# manipulate user requests
         if togo == gotouserfunctions:
             self.response.write('User functions')
 
 
 
+#************************************************
 
         if togo == gotoRestfunctions:
            # self.response.write('Restaurants functions')
 
             res=Restaurants.query().fetch(1)
             
-            st = str(res[0].name) + ',' + str(res[0].address) + ',' + str(res[0].lng) + ',' + str(res[0].lat) + ',' + str(res[0].rating) + '#'
-            self.response.write(st)
             n=Restaurants.query().count(limit=None)
-            for i in range(1,n):
+            for i in range(1,n+1):
                 rest_list=Restaurants.query().fetch(1,offset=i-1)
                 rest_list=list(rest_list)
+
+                restaurantrating = Rest_Rating.query(Rest_Rating.rest_name == rest_list[0].name).fetch(1)
+                restlist = [] 
+                r=''
+                for rest in restaurantrating:
+                    restlist.append(rest.rating)
+                    r=rest.rating
+                    break;
+
                 st = ''
-                st = str(rest_list[0].name) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(rest_list[0].rating) + '#'
+                st = str(rest_list[0].name) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(r) + '#'
                 self.response.write(st)
             
-        
-        newrest=self.request.get('newrest')#new restaurant to be added
+
+            #rating***********************************************************rating
+        if togo == rateit:
+
+            rest_name2 = self.request.get('name')
+            rat = self.request.get('rat')    
+            if not rest_name2:
+                self.error(403)
+                self.response.write('Empty restaurant submitted')
+                return
+
+            if not rat:
+                self.error(403)
+                self.response.write('empty rating cant accept')
+
+            rest = Rest_Rating.query(Rest_Rating.rest_name == rest_name2).get()
+            if rest:
+                ratinginnum = float(rest.rating)
+                n2 = int(rest.numberOfrating)
+                rest.rating = ( ratinginnum + float(rat) ) / (n2+1)
+                rest.numberOfrating = n2 + 1
+                rest.put()
+                self.response.write('done rating')
+                return
+
+            r = Rest_Rating()
+            r.rest_name = rest_name2
+            r.rating = int(rat)
+            r.numberOfrating = 1
+            r.put()
+            self.response.write('done rating')
+        #finish rating
+
+
+        #new restaurant to be added
+        newrest=self.request.get('newrest')
         if newrest == new_rest1:
             name = self.request.get('name')
             address = self.request.get('address')
@@ -73,7 +121,7 @@ class MainHandler(webapp2.RequestHandler):
                 self.response.write('Empty Address submitted')
                 return
                 
-            name2 = User.query(Restaurants.name == name).get()
+            name2 = Restaurants.query(Restaurants.name == name).get()#User
             if name2:
                 self.error(402)
                 self.response.write('restaurants exist')
@@ -85,12 +133,51 @@ class MainHandler(webapp2.RequestHandler):
             resta.lng=lng
             resta.lat=lat
             resta.put()
-            self.response.write(json.dumps({'status':'OK'}))
-            self.response.write('new restaurant added')
+            #self.response.write(json.dumps({'status':'OK'}))
+            self.response.write('added')
+
+        # *******************************************Commenting a restaurant***********************************
+        if togo == commentit:
+            comment_name = self.request.get('name')
+            comment = self.request.get('comment')
+
+            if not comment_name:
+                self.error(404)
+                self.response.write('null restaurant submitted')
+                return
+
+            if not comment:
+                self.error(404)
+                self.response.write('null comment submitted')
+                return
+
+            comment_string = Rest_Comments()
+            comment_string.rest_name = comment_name
+            comment_string.comment = comment
+            comment_string.put()
+            self.response.write('done commenting - OK')
+# ***************************************************give me restaurant comments 
+        if togo == givemecomments:
+            restaurant = ''
+            restaurant = self.request.get('name')
+            if not restaurant:
+                self.error(404)
+                self.response.write('null submitted')
+                return
+
+            n5=Rest_Comments.query(Rest_Comments.rest_name == restaurant).count(limit=None)
+            restaurant_list = Rest_Comments.query(Rest_Comments.rest_name == restaurant).fetch(limit=None)
 
 
+            for restaurant_x in restaurant_list:
+                st_comment =''
+                st_comment = restaurant_x.comment + '||'
+                self.response.write(st_comment)
 
-            
+
+        #***************************************************finish commenting*************************************
+
+
 		
 app = webapp2.WSGIApplication([
     ('/', MainHandler)
