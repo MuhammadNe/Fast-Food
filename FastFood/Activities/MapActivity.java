@@ -1,50 +1,48 @@
 package com.MOS.fastfood;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.print.PrintAttributes;
 import android.support.v4.app.FragmentActivity;
-import android.text.Html;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+
+
+
+
+
 
 
 
@@ -58,8 +56,12 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 /*import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -112,13 +114,13 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	private GoogleMap mMap;
 	private GoogleApiClient mGoogleApiClient;
 	private LocationRequest mLocationRequest;
+	Marker myMarker;
 
 	//Getting lng AND lat
-	RestaurantData restaurantData = new RestaurantData();
-	String tempResult;
-	String lng = "", lat = "";
+	private String lng = "", lat = "", address = "";
 
-	//RestaurantData data = new RestaurantData();
+	//Getting lat AND long index from RestdaurantData to be used for geoLocation
+	public int latIndex, lngIndex;
 
 	public static final String TAG = MapActivity.class.getSimpleName();
 
@@ -162,10 +164,87 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 			markLocation();
 
 
-
 			EditText et = (EditText) findViewById(R.id.editText1);
 			Button locationButton = (Button) findViewById(R.id.LocationButton);
 
+			/*
+			 * 
+			 *  onMarkerClickListener implemented method
+			 * 
+			 */
+			mMap.setOnMarkerClickListener(new OnMarkerClickListener() {
+
+
+				@Override
+				public boolean onMarkerClick(Marker arg0) {
+					int i,j;
+					for(i = 0; i < RestaurantData.lat.size(); i++)
+					{
+						if(RestaurantData.lat.get(i).equals(Double.toString(arg0.getPosition().latitude)))
+						{
+							break;
+						}
+					}
+					for(j = 0; j < RestaurantData.lng.size(); j++)
+					{
+						if(RestaurantData.lng.get(j).equals(Double.toString(arg0.getPosition().longitude)))
+						{
+							break;
+						}
+					}
+					if(i == j)
+					{
+						//TODO intent to restaurant page activity
+						//System.out.println("CLICKED : " + RestaurantData.name.get(i));
+						Toast.makeText(getApplicationContext(), "CLICKED", Toast.LENGTH_SHORT).show();
+						//GeoLocation geoLocation = new GeoLocation(getApplicationContext());
+						//geoLocation.lookUpAddress(arg0.getPosition().latitude, arg0.getPosition().longitude);		  
+						mMap.setInfoWindowAdapter(new MyInfoWindowAdapter());
+						return false;
+					}
+					//System.err.println("ERROR CLICKING THE MARKER !");
+					else
+					{
+						System.out.println(i + " / " + j);
+						System.out.println(Double.toString(arg0.getPosition().latitude) + " / " + Double.toString(arg0.getPosition().longitude));
+						Toast.makeText(getApplicationContext(), i + " / " + j, Toast.LENGTH_SHORT).show();
+						return false;
+					}
+				}
+			});
+
+
+
+
+
+			/*
+			 * 
+			 * Click Listener to click the text on a marker
+			 * 
+			 */
+			mMap.setInfoWindowAdapter(new InfoWindowAdapter() {
+
+				@Override
+				public View getInfoWindow(Marker arg0) {
+					return null;
+				}
+
+				@Override
+				public View getInfoContents(Marker arg0) {
+
+					mMap.setOnInfoWindowClickListener(new OnInfoWindowClickListener() {
+
+						@Override
+						public void onInfoWindowClick(Marker arg0) {
+
+							Toast.makeText(getApplicationContext(), "TextView Clicked", Toast.LENGTH_SHORT).show();
+						}
+					});
+					return null;
+				}
+			});
+
+			// Button Listener used to save lng and lat and use them for adding a new restaurant
 			locationButton.setOnClickListener(new OnClickListener() {
 
 				@Override
@@ -179,8 +258,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 					{
 						RestaurantData.saveLat = lat;
 						RestaurantData.savelng = lng;
+						RestaurantData.saveAddress = address;
 						/*ShowLocation();*/
-						Intent intent = new Intent(getApplicationContext(), AddRestaurantActivity.class);
+						Intent intent = new Intent(getApplicationContext(), FacebookLoginActivity.class);
 						startActivity(intent);
 						finish();
 					}
@@ -210,7 +290,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		{
 			Toast.makeText(this, "Can't Load Map.", Toast.LENGTH_LONG).show();
 		}
-		
+
 
 	}
 
@@ -291,7 +371,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		}
 		else
 		{
-			//Toast
+			//Toast.makeText(getApplicationContext(), "Can't Initialize Map!", Toast.LENGTH_SHORT).show();
 		}
 	}
 	/*
@@ -311,7 +391,7 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		lat = location.getLatitude();
 		lng = location.getLongitude();
 		LatLng ll = new LatLng(lat,lng);
-		mMap.addMarker(new MarkerOptions().position(ll).title("Marker"));
+		//mMap.addMarker(new MarkerOptions().position(ll).title("Marker"));
 		CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll,15);
 		mMap.animateCamera(update);
 	}
@@ -332,22 +412,29 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 		mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
 	}
 
+	/*
+	 * 
+	 * Marks on map the entire restaurant list
+	 * 
+	 */
 	public void markLocation()
 	{
-		RestaurantData restaurantData = new RestaurantData();
 		for(int i = 0; i<RestaurantData.lng.size(); i++)
 		{
-			
+
 			try
 			{
 				double templat = Double.parseDouble(RestaurantData.lat.get(i));
 				double templng = Double.parseDouble(RestaurantData.lng.get(i));
+				System.out.println("lat = " + templat + " - lng = " + templng);
+				String markerTitle = RestaurantData.name.get(i);
 				LatLng ll = new LatLng(templat, templng);
-				mMap.addMarker(new MarkerOptions().position(ll).title("Marker"));
+				myMarker = mMap.addMarker(new MarkerOptions().position(ll).title(markerTitle).snippet("Snippet"));
 			}
 			catch (Exception e)
 			{
-				System.out.println("cant mark");
+				System.out.println(RestaurantData.lng.get(i));
+				System.out.println("ERROR MARKING THE RESTAURANTS !");
 			}
 		}
 	}
@@ -411,13 +498,6 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	@Override
 	public void onConnected(Bundle bundle) {
 
-		/* Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-	        if (location == null) {
-	            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-	        }
-	        else {
-	            handleNewLocation(location);
-	        }*/
 
 		mLocationRequest = LocationRequest.create();
 		mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -442,14 +522,10 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 
 	@Override
 	public void onLocationChanged(Location location) {
-		gotoLocation(location);
-		lng = location.getLongitude() + "";
+
 		lat = location.getLatitude() + "";
-
-
-
-		//Toast.makeText(this, location.getLatitude()+","+location.getLongitude(), Toast.LENGTH_SHORT).show();
-		//handleNewLocation(location);
+		lng = location.getLongitude() + "";
+		gotoLocation(location);
 
 	}
 
@@ -468,60 +544,32 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
 	}
 
 
+	class MyInfoWindowAdapter implements InfoWindowAdapter{
 
+		private final View myContentsView;
 
-
-	/***********************************Sending HTTP GET REQUES****************************************************/
-
-
-	class RequestTask extends AsyncTask<String, String, String>{
-
-		@Override
-		protected String doInBackground(String... uri) {
-			HttpClient httpclient = new DefaultHttpClient();
-			HttpResponse response;
-			String responseString = null;
-			try {
-				response = httpclient.execute(new HttpGet(uri[0]));
-				StatusLine statusLine = response.getStatusLine();
-				if(statusLine.getStatusCode() == HttpStatus.SC_OK){
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					response.getEntity().writeTo(out);
-					responseString = out.toString();
-					out.close();
-				} else{
-					//Closes the connection.
-					response.getEntity().getContent().close();
-					throw new IOException(statusLine.getReasonPhrase());
-				}
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return responseString;
+		MyInfoWindowAdapter(){
+			myContentsView = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
 		}
 
 		@Override
-		protected void onPostExecute(String result) {
-			super.onPostExecute(result);
-			tempResult = result;
-			Toast.makeText(getApplicationContext(), result, Toast.LENGTH_SHORT).show();
-			//restaurantData.parse(result);
+		public View getInfoContents(Marker marker) {
 
+			TextView tvTitle = ((TextView)myContentsView.findViewById(R.id.title));
+			tvTitle.setText(marker.getTitle());
+			TextView tvSnippet = ((TextView)myContentsView.findViewById(R.id.snippet));
+			tvSnippet.setText(marker.getSnippet());
+
+			return myContentsView;
 		}
+
+		@Override
+		public View getInfoWindow(Marker marker) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
 	}
-
-
-
-
-
-
-
-
-
-
-
 
 
 }
