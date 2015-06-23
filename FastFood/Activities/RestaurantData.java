@@ -10,6 +10,7 @@ public class RestaurantData {
 	static public ArrayList<String> lat = new ArrayList<String>();
 	static public ArrayList<String> address = new ArrayList<String>();
 	static public ArrayList<String> rate = new ArrayList<String>();
+	static public ArrayList<String> comment = new ArrayList<String>();
 	
 	//******* in ListActivity for chosing a restaurant to view
 	static public int restaurantNumber;
@@ -22,13 +23,18 @@ public class RestaurantData {
 	static public String savelng;
 	static public String saveLat;
 	static public String saveName = "";
-	static public String saveRate;
+	static public String saveComment = "";
+	static public String saveAddress = "";
+	static public String saveRate = "";
+	
+	
 	static public int numOfRes;
 	
+	
 	boolean checkIfExist;
-	public void parse(String toParse)
+	public void restaurantParse(String toParse)
 	{
-		while(!toParse.equals(""))
+		while(!toParse.equals("") && toParse.length() > 0)
 		{
 			checkIfExist = false;
 			String resTemp;
@@ -39,9 +45,10 @@ public class RestaurantData {
 			for(int i = 0; i<name.size(); i++)
 			{
 				if(name.get(i).equals(parsed[0])
-						&& lng.get(i).equals(parsed[1])
-						&& lat.get(i).equals(parsed[2])
-						&& address.get(i).equals(parsed[3]))
+						&& address.get(i).equals(parsed[2])
+						&& lng.get(i).equals(parsed[3])
+						&& lat.get(i).equals(parsed[4])
+						)
 				{
 					checkIfExist = true;
 				}
@@ -49,11 +56,11 @@ public class RestaurantData {
 			if(!checkIfExist)
 			{
 				name.add(parsed[0]);
-				address.add(parsed[1]);
-				lng.add(parsed[2]);
-				lat.add(parsed[3]);
+				address.add(parsed[2]);
+				lng.add(parsed[3]);
+				lat.add(parsed[4]);
 				try{
-				rate.add(parsed[4]);
+				rate.add(parsed[5]);
 				}
 				catch(Exception e)
 				{
@@ -73,6 +80,37 @@ public class RestaurantData {
 			}
 		}
 
+	}
+	
+	public void commentParse(String toParse)
+	{
+		while(!toParse.equals("") || toParse.length() > 0)
+		{
+			toParse = toParse.substring(1);
+			toParse = toParse.substring(1);
+			checkIfExist = false;
+			String commentTemp;
+			commentTemp = toParse.substring(0, toParse.indexOf("#"));
+			//System.out.println(resTemp);
+			for(int i = 0; i<comment.size(); i++)
+			{
+				if(comment.get(i).equals(commentTemp))
+					checkIfExist = true;
+			}
+			if(!checkIfExist)
+			{
+				comment.add(commentTemp);
+				System.out.println("comment = " + commentTemp);
+			}
+			int y = toParse.indexOf("#");
+			
+			for(int i = 0; i <= y; i++)
+			{
+				int j = 1;
+				toParse = toParse.substring(j);
+			}
+		
+		}
 	}
 
 }
