@@ -22,7 +22,10 @@ import json
 from HandleRequest import *
 from RestaurantsComments import *
 from restaurantsRating import *
+from math import sin, cos, asin, sqrt, degrees, radians
 
+# html = template.render('templates/personal.html', {})
+#     self.response.write(html)
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         gotouserfunctions = 'userfunctions'
@@ -31,51 +34,59 @@ class MainHandler(webapp2.RequestHandler):
         allrating = 'allratings'
         commentit = 'commentit'
         givemecomments = 'givemecomments'
-
+        filter0 = 'filter'
         new_rest1 = 'new_rest'
-        togo = self.request.get('togo')
 
+        togo = self.request.get('togo')
         if not togo:
             self.error(402)
-            self.response.write('togo is null\n')
+            html = template.render('AdPage.html', {})
+            self.response.write(html)
             return
-            
-# manipulate user requests
+
+
+        # manipulate user requests
         if togo == gotouserfunctions:
             self.response.write('User functions')
 
 
 
-#************************************************
+        # ************************************************
 
         if togo == gotoRestfunctions:
-           # self.response.write('Restaurants functions')
+            # self.response.write('Restaurants functions')
 
-            res=Restaurants.query().fetch(1)
-            
-            n=Restaurants.query().count(limit=None)
-            for i in range(1,n+1):
-                rest_list=Restaurants.query().fetch(1,offset=i-1)
-                rest_list=list(rest_list)
+            res = Restaurants.query().fetch(1)
+
+            n = Restaurants.query().count(limit=None)
+            if n == 0:
+                self.response.write('norestaurants')
+                return
+
+            for i in range(1, n + 1):
+                rest_list = Restaurants.query().fetch(1, offset=i - 1)
+                rest_list = list(rest_list)
 
                 restaurantrating = Rest_Rating.query(Rest_Rating.rest_name == rest_list[0].name).fetch(1)
-                restlist = [] 
-                r=''
+                restlist = []
+                r = ''
                 for rest in restaurantrating:
                     restlist.append(rest.rating)
-                    r=rest.rating
-                    break;
+                    r = rest.rating
+                    if not r or r is None:
+                        r = 0
+                    break
 
                 st = ''
-                st = str(rest_list[0].name) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(r) + '#'
+                st = str(rest_list[0].name) + ',' + str(rest_list[0].type) + ',' + str(rest_list[0].address) + ',' + str(rest_list[0].lng) + ',' + str(rest_list[0].lat) + ',' + str(r) + '#'
                 self.response.write(st)
-            
 
-            #rating***********************************************************rating
+
+                # rating***********************************************************rating
         if togo == rateit:
 
             rest_name2 = self.request.get('name')
-            rat = self.request.get('rat')    
+            rat = self.request.get('rat')
             if not rest_name2:
                 self.error(403)
                 self.response.write('Empty restaurant submitted')
@@ -89,28 +100,29 @@ class MainHandler(webapp2.RequestHandler):
             if rest:
                 ratinginnum = float(rest.rating)
                 n2 = int(rest.numberOfrating)
-                rest.rating = ( ratinginnum + float(rat) ) / (n2+1)
+                rest.rating = (ratinginnum + float(rat)) / (n2 + 1)
                 rest.numberOfrating = n2 + 1
                 rest.put()
-                self.response.write('done rating')
+                self.response.write('rateok')
                 return
 
             r = Rest_Rating()
             r.rest_name = rest_name2
-            r.rating = int(rat)
+            r.rating = float(rat)
             r.numberOfrating = 1
             r.put()
-            self.response.write('done rating')
-        #finish rating
+            self.response.write('rateok')
+        # finish rating
 
 
-        #new restaurant to be added
-        newrest=self.request.get('newrest')
-        if newrest == new_rest1:
+        # ************************************************ new restaurant to be added
+        #newrest = self.request.get('newrest')
+        if togo == new_rest1:
             name = self.request.get('name')
             address = self.request.get('address')
             lng = self.request.get('lng')
             lat = self.request.get('lat')
+            type2 = self.request.get('type')
             if not name:
                 self.error(403)
                 self.response.write('Empty Name submitted')
@@ -120,26 +132,28 @@ class MainHandler(webapp2.RequestHandler):
                 self.error(403)
                 self.response.write('Empty Address submitted')
                 return
-                
-            name2 = Restaurants.query(Restaurants.name == name).get()#User
+
+            name2 = Restaurants.query(Restaurants.name == name).get()  # User
             if name2:
                 self.error(402)
                 self.response.write('restaurants exist')
                 return
-                        
+
             resta = Restaurants()
             resta.name = name
-            resta.address=address
-            resta.lng=lng
-            resta.lat=lat
+            resta.address = address
+            resta.lng = lng
+            resta.lat = lat
+            resta.type0 = type2
             resta.put()
-            #self.response.write(json.dumps({'status':'OK'}))
+            # self.response.write(json.dumps({'status':'OK'}))
             self.response.write('added')
 
         # *******************************************Commenting a restaurant***********************************
         if togo == commentit:
             comment_name = self.request.get('name')
             comment = self.request.get('comment')
+            comentator = self.request.get('commentator')
 
             if not comment_name:
                 self.error(404)
@@ -154,9 +168,10 @@ class MainHandler(webapp2.RequestHandler):
             comment_string = Rest_Comments()
             comment_string.rest_name = comment_name
             comment_string.comment = comment
+            comment_string.commentator = comentator
             comment_string.put()
-            self.response.write('done commenting - OK')
-# ***************************************************give me restaurant comments 
+            self.response.write('commentok')
+        # ***************************************************give me restaurant comments
         if togo == givemecomments:
             restaurant = ''
             restaurant = self.request.get('name')
@@ -165,21 +180,68 @@ class MainHandler(webapp2.RequestHandler):
                 self.response.write('null submitted')
                 return
 
-            n5=Rest_Comments.query(Rest_Comments.rest_name == restaurant).count(limit=None)
+            n5 = Rest_Comments.query(Rest_Comments.rest_name == restaurant).count(limit=None)
             restaurant_list = Rest_Comments.query(Rest_Comments.rest_name == restaurant).fetch(limit=None)
 
+            if n5 == 0:
+                self.response.write('nocomments')
+                return
 
+            st_comment = '1#'
             for restaurant_x in restaurant_list:
-                st_comment =''
-                st_comment = restaurant_x.comment + '||'
+                st_comment =st_comment + restaurant_x.comment + '#'
                 self.response.write(st_comment)
+                st_comment = ''
+
+# ***************************************************finish commenting*************************************
+# ****************************************************filter section**********************************
+        if togo == filter0:
+            restaurant_name = self.request.get('name')
+            restaurant_type = self.request.get('type')
+            restaurant_lng = self.request.get('lng')
+            restaurant_lat = self.request.get('lat')
+            restaurant_dst = self.request.get('dst')
+
+            if restaurant_type:
+                qry = Restaurants.query(Restaurants.type == restaurant_type).fetch(limit=None)
+                filtered = ''
+                for obj in qry:
+                    filtered = obj.name + ',' + obj.address + ',' + obj.lng + ',' + obj.lat + '#'
+                    self.response.write(filtered)
+                    filtered = ''
+
+            if restaurant_type and restaurant_dst:
+                qry1 = qry.filter(distance_between_points(restaurant_lat,restaurant_lng,Restaurants.lat,Restaurants.lng)<= float(restaurant_dst)).fetch(limit=None)
+
+            if not restaurant_type and restaurant_dst:
+                qry1 = Restaurants.query(distance_between_points(restaurant_lat,restaurant_lng,Restaurants.lat,Restaurants.lng)<= float(restaurant_dst)).fetch(limit=None)
 
 
-        #***************************************************finish commenting*************************************
 
+    def haversine(angle_radians):
+        return sin(angle_radians / 2.0) ** 2
 
-		
+    def inverse_haversine(h):
+        return 2 * asin(sqrt(h))# radians
+
+    def distance_between_points(lat1, lon1, lat2, lon2):
+        RADIUS = 6371.0 #earth rafius in km
+        # all args are in degrees
+        # WARNING: loss of absolute precision when points are near-antipodal
+        lat1 = radians(lat1)
+        lat2 = radians(lat2)
+        dlat = lat2 - lat1
+        dlon = radians(lon2 - lon1)
+        h = haversine(dlat) + cos(lat1) * cos(lat2) * haversine(dlon)
+        return RADIUS * inverse_haversine(h)
+
+    def bounding_box(lat, lon, distance):
+        RADIUS = 6371.0 #earth rafius in km
+        dlat = distance / RADIUS
+        dlon = asin(sin(dlat) / cos(radians(lat)))
+        return degrees(dlat), degrees(dlon)
+    #*****************************************************Done Filtering
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler)
 ], debug=True)
-
